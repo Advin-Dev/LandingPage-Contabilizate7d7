@@ -2,48 +2,65 @@
 import { useState } from "react";
 
 const Hero = () => {
+  // Define el estado para el formulario con los valores iniciales
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     message: "",
   });
-  const [status, setStatus] = useState<string | null>(null); // Estado para mostrar mensajes
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { id, value } = e.target;
-    setFormData((prevState) => ({ ...prevState, [id]: value }));
+  // Define el estado para mostrar mensajes de éxito o error
+  const [status, setStatus] = useState<string | null>(null);
+
+  // Define la URL del backend
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
+
+  // Obtener el token CSRF del backend
+  const getCsrfToken = async () => {
+    await fetch(`${backendUrl}/sanctum/csrf-cookie`, {
+      credentials: "include", // Incluye cookies en las solicitudes
+    });
   };
 
+  // Definición de la función handleChange
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target; // Extraemos el id y el valor del campo
+    setFormData((prevState) => ({ ...prevState, [id]: value })); // Actualizamos el estado
+  };
+
+  // Definición de la función handleSubmit
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+    e.preventDefault(); // Evitar el comportamiento por defecto del formulario
     setStatus(null); // Limpiar el estado antes de enviar
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
-      console.log("Enviando solicitud al servidor...");
+      // Obtén el token CSRF antes de enviar la solicitud
+      await getCsrfToken();
 
-      const response = await fetch(`${backendUrl}/api/send-email?nocache=${new Date().getTime()}`, {
+      // Envía los datos al backend
+      const response = await fetch(`${backendUrl}/api/send-email`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // Asegura las cookies y CSRF
         body: JSON.stringify(formData),
       });
 
       // Verificar si la respuesta es exitosa
       if (response.ok) {
-        const successMessage = await response.text(); // Cambiar a .text() si no se devuelve JSON
+        const successMessage = await response.json();
         console.log("Mensaje de éxito:", successMessage);
-        setStatus(`Mensaje enviado: ${successMessage}`);
-        alert(`Éxito: ${successMessage}`); // Mostrar alerta de éxito
+        setStatus(`Mensaje enviado: ${successMessage.success}`);
+        alert(`Éxito: ${successMessage.success}`); // Mostrar alerta de éxito
         setFormData({ name: "", email: "", phone: "", message: "" }); // Limpiar los campos
       } else {
-        // Comprobar si la respuesta es JSON para obtener el mensaje de error
-        const errorMessage = await response.text(); // Cambiar a .text() si no se devuelve JSON
+        // Manejar el error si la respuesta no es exitosa
+        const errorMessage = await response.json();
         console.error("Mensaje de error:", errorMessage);
-        setStatus(`Error: ${errorMessage}`);
-        alert(`Error: ${errorMessage}`); // Mostrar alerta de error
+        setStatus(`Error: ${errorMessage.error}`);
+        alert(`Error: ${errorMessage.error}`); // Mostrar alerta de error
       }
     } catch (error) {
       console.error("Error al enviar el correo:", error);
@@ -51,8 +68,7 @@ const Hero = () => {
       alert("Hubo un problema al enviar el correo. Por favor, inténtalo de nuevo."); // Mostrar alerta de error
     }
   };
-  
-  
+
   return (
     <>
       <section
@@ -111,12 +127,13 @@ const Hero = () => {
                       id="name"
                       type="text"
                       value={formData.name}
-                      onChange={handleChange}
+                      onChange={handleChange} // Asegúrate de que se está llamando correctamente
                       placeholder="Ingresa tu nombre"
                       className="border-stroke dark:text-body-color-dark dark:shadow-two w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary dark:focus:shadow-none"
                     />
                   </div>
                 </div>
+                {/* Repites el mismo patrón para los demás campos */}
                 <div className="w-full px-4 md:w-1/2">
                   <div className="mb-8">
                     <label
@@ -183,6 +200,13 @@ const Hero = () => {
             </form>
           </div>
         </div>
+      
+   
+ 
+
+
+
+
 
         {/* Figuras SVG en el fondo */}
         <div className="absolute right-0 top-0 z-[-1] opacity-30 lg:opacity-100">

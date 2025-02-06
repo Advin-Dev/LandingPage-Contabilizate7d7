@@ -11,6 +11,7 @@ import Testimonials from "@/components/Testimonials";
 import Video from "@/components/Video";
 import { Metadata } from "next";
 
+
 export const metadata: Metadata = {
   title: "Contabilizate en 7 de 7",
   description: "Texto de prueba",

@@ -10,6 +10,7 @@ const Hero = () => {
     message: "",
   });
 
+  
   // Define el estado para mostrar mensajes de éxito o error
   const [status, setStatus] = useState<string | null>(null);
 
